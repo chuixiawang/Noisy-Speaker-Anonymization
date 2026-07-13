@@ -1,0 +1,32 @@
+project: Noisy-Speaker-Anonymization
+updated: 2026-07-13
+status: ready_for_remote_auth
+stages:
+  - name: source_inventory
+    status: complete
+    artifacts:
+      - configs/casr_policy.json
+      - configs/offline_reference_policy.json
+      - artifacts/canonical_utterance_predictions.json
+    gate: PASS
+    evidence: extracted from the private experiment repository on ruoyu1
+  - name: public_package
+    status: complete
+    artifacts:
+      - src/casr
+      - docs/EVALUATION_PROTOCOL.md
+      - README.md
+    gate: PASS
+  - name: release_review
+    status: warning
+    artifacts:
+      - docs/ETHICS_AND_RELEASE_REVIEW.md
+    gate: WARN
+    evidence: no raw data or third-party code; software license not selected
+  - name: github_publish
+    status: blocked
+    gate: BLOCKED
+    evidence: registered deploy-key fingerprint does not match available local or ruoyu1 keys
+known_limitations:
+  - End-to-end SSL-SAS backbone and external model weights are not redistributed.
+  - Software license awaits repository-owner selection.

@@ -1,0 +1,30 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.venv/
+dist/
+build/
+
+# Local datasets, model weights, generated audio, and evaluation outputs.
+data/
+checkpoints/
+models/
+outputs/
+results/
+*.wav
+*.flac
+*.pt
+*.pth
+*.ckpt
+*.onnx
+
+# Local configuration and credentials.
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+
+.DS_Store

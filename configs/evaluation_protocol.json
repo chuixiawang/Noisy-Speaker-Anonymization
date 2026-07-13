@@ -1,0 +1,25 @@
+{
+  "seed": 2026,
+  "sampling_rate_hz": 16000,
+  "main_corpus": "LibriSpeech test-clean",
+  "n_speakers": 20,
+  "utterances_per_speaker": 10,
+  "n_utterances": 200,
+  "speaker_trials": {
+    "positive": 900,
+    "negative": 900
+  },
+  "canonical_conditions": {
+    "noise_types": ["white", "babble"],
+    "snr_db": [20, 10, 5, 0]
+  },
+  "candidate_alphas": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8],
+  "privacy_metric": "EER",
+  "utility_metrics": ["WER", "CER"],
+  "attackers": ["ignorant", "lazy-informed", "semi-informed"],
+  "primary_attacker": "lazy-informed",
+  "asr": "Whisper-base",
+  "primary_verifier": "ECAPA-TDNN",
+  "secondary_verifier": "WavLM",
+  "bootstrap_resamples": 1000
+}

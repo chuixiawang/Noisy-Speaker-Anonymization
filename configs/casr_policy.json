@@ -1,0 +1,72 @@
+{
+  "policy_name": "phase2_alpha_policy_learned_v2_preview_v7",
+  "timestamp": "2026-04-05",
+  "notes": [
+    "learned_v2_preview trains on utterance-level acoustic features rather than condition-averaged features",
+    "current output is still a preview because per-condition alpha is obtained by aggregating utterance-level predictions",
+    "selected model is chosen for leave-one-condition stability first, not just best in-sample fit"
+  ],
+  "utterance_level_model": {
+    "model_type": "utterance_acoustic_feature_regression",
+    "feature_names_base": [
+      "centroid_norm_mean",
+      "energy_contrast_norm"
+    ],
+    "features": [
+      "bias",
+      "centroid_norm_mean",
+      "energy_contrast_norm",
+      "centroid_norm_mean_sq",
+      "energy_contrast_norm_sq",
+      "centroid_norm_mean_x_energy_contrast_norm"
+    ],
+    "coefficients": [
+      0.6374999999999983,
+      0.018232113225399058,
+      0.3127914120105167,
+      0.16260826782739035,
+      -0.12576197363700442,
+      -0.12245690276946036
+    ],
+    "feature_means": {
+      "centroid_norm_mean": 0.6388435803531511,
+      "energy_contrast_norm": 0.5274079123536746,
+      "centroid_norm_mean_sq": 0.4490902107271967,
+      "energy_contrast_norm_sq": 0.31758335285118405,
+      "centroid_norm_mean_x_energy_contrast_norm": 0.3206006617236371
+    },
+    "feature_stds": {
+      "centroid_norm_mean": 0.20240822752240975,
+      "energy_contrast_norm": 0.19855539992133872,
+      "centroid_norm_mean_sq": 0.26354101680008357,
+      "energy_contrast_norm_sq": 0.23050254482435578,
+      "centroid_norm_mean_x_energy_contrast_norm": 0.12798288540742916
+    },
+    "aggregation_mode": "p75",
+    "feature_source": "real_noisy_audio_utterance_features",
+    "alpha_min": 0.3,
+    "alpha_max": 0.8,
+    "candidate_alphas": [
+      0.3,
+      0.4,
+      0.5,
+      0.6,
+      0.7,
+      0.8
+    ]
+  },
+  "preview_condition_predictions": {
+    "white_snr20dB": 0.7,
+    "white_snr10dB": 0.7,
+    "white_snr5dB": 0.7,
+    "white_snr0dB": 0.7,
+    "babble_snr20dB": 0.7,
+    "babble_snr10dB": 0.6,
+    "babble_snr5dB": 0.6,
+    "babble_snr0dB": 0.5
+  },
+  "default_speaker_mix_alpha": 0.7,
+  "artifacts": {
+    "utterance_manifest": "artifacts/canonical_utterance_predictions.json"
+  }
+}
