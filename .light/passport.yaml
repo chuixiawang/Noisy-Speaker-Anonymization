@@ -1,6 +1,6 @@
 project: Noisy-Speaker-Anonymization
-updated: 2026-07-13
-status: ready_for_remote_auth
+updated: 2026-07-14
+status: published
 stages:
   - name: source_inventory
     status: complete
@@ -24,9 +24,9 @@ stages:
     gate: WARN
     evidence: no raw data or third-party code; software license not selected
   - name: github_publish
-    status: blocked
-    gate: BLOCKED
-    evidence: registered deploy-key fingerprint does not match available local or ruoyu1 keys
+    status: complete
+    gate: PASS
+    evidence: published to chuixiawang/Noisy-Speaker-Anonymization via the ruoyu1-casr deploy key
 known_limitations:
   - End-to-end SSL-SAS backbone and external model weights are not redistributed.
   - Software license awaits repository-owner selection.
