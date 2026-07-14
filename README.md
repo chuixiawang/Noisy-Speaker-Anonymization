@@ -4,17 +4,25 @@ Reference implementation and evaluation protocol for **Condition-Aggregated Stat
 Recovery (CASR)**, a lightweight runtime control layer for noisy speaker
 anonymization.
 
-<p align="center">
-  <img src="assets/casr_framework.png" width="100%" alt="CASR framework">
-</p>
-
-## Overview
+## Motivation
 
 Speaker anonymization must hide speaker identity while preserving intelligibility.
 Under background noise, a strength calibrated on clean speech may no longer provide
 an appropriate privacy--utility trade-off. Our experiments show that noise mainly
 shifts the utility side of the operating point rather than causing a systematic
 privacy collapse.
+
+<p align="center">
+  <img src="assets/motivation.png" width="72%" alt="Motivation: noisy deployment shifts the privacy-utility operating point">
+</p>
+
+<p align="center"><em>
+In noisy deployment, privacy remains within a relatively narrow EER band while
+intelligibility deteriorates sharply, motivating condition-dependent operating-point
+recovery.
+</em></p>
+
+## Method
 
 CASR formulates this problem as **operating-point recovery under a hidden noise
 condition**. It freezes the anonymization backbone, requires no test-time noise
@@ -28,6 +36,10 @@ labels, and:
 
 CASR is therefore a complement to existing SSL-based speaker anonymization
 backbones, not a replacement for them.
+
+<p align="center">
+  <img src="assets/casr_method.png" width="100%" alt="Complete CASR method with offline reference, online condition-level recovery, and ACEG audit">
+</p>
 
 ## Main results
 
