@@ -1,98 +1,93 @@
 # Condition-Level Operating-Point Recovery for Noisy Speaker Anonymization
 
 Reference implementation and evaluation protocol for **Condition-Aggregated State
-Recovery (CASR)**, a lightweight runtime control layer for noisy speaker
-anonymization.
+Recovery (CASR)**, a lightweight control layer that selects the anonymization
+strength of a frozen speaker-anonymization backbone for noisy speech.
 
-## Motivation
+## Problem
 
-Speaker anonymization must hide speaker identity while preserving intelligibility.
-Under background noise, a strength calibrated on clean speech may no longer provide
-an appropriate privacy--utility trade-off. Our experiments show that noise mainly
-shifts the utility side of the operating point rather than causing a systematic
-privacy collapse.
+Speaker anonymization rewrites the speaker identity in speech while keeping the
+linguistic content intelligible. The anonymization strength `alpha` sets how much of
+the speaker representation is rewritten. Under background noise, privacy measured
+by the equal error rate (EER) largely holds, utility measured by the word error rate
+(WER) drops, and the smallest strength that meets the minimum target EER changes
+with the noise condition. A strength fixed on clean speech therefore either falls
+below the privacy requirement or gives up utility.
 
 <p align="center">
-  <img src="assets/motivation.png" width="72%" alt="Motivation: noisy deployment shifts the privacy-utility operating point">
+  <img src="assets/motivation.png" width="80%" alt="Privacy and utility of a fixed strength under white and babble noise">
 </p>
-
-<p align="center"><em>
-In noisy deployment, privacy remains within a relatively narrow EER band while
-intelligibility deteriorates sharply, motivating condition-dependent operating-point
-recovery.
-</em></p>
 
 ## Method
 
-CASR formulates this problem as **operating-point recovery under a hidden noise
-condition**. It freezes the anonymization backbone, requires no test-time noise
-labels, and:
+CASR keeps the backbone frozen and does not read noise labels when it selects a
+strength. It has three components.
 
-1. predicts utterance-level anonymization strength from lightweight acoustic cues;
-2. aggregates the predictions into a stable condition-level decision;
-3. applies the calibrated strength to the unchanged anonymization backbone; and
-4. emits a read-only Alpha-Control Evidence Gate (ACEG) record for auditing decision
-   consistency and uncertainty.
-
-CASR is therefore a complement to existing SSL-based speaker anonymization
-backbones, not a replacement for them.
+1. **Offline calibration.** On a development set whose speakers do not overlap with
+   any evaluation speaker, the reference policy `g(c)` is the smallest candidate
+   strength whose EER meets the calibration threshold `tau_cal = tau + m`
+   (`tau = 40.5%`, margin `m = 3.2` points). A six-parameter second-order ridge
+   regressor on two acoustic features (spectral centroid and energy contrast) learns
+   `g(c)` from single utterances.
+2. **Online recovery.** For a batch recorded under one condition, CASR estimates a
+   strength for each utterance, snaps the estimates to the candidate grid
+   `{0.3, ..., 0.8}`, takes the mode, and applies a three-branch down-step rule
+   when the estimates are dispersed. The batch strength goes directly to the
+   backbone.
+3. **Alpha-Control Evidence Gate (ACEG).** A read-only record of whether the
+   utterance-level estimates of the batch agree. ACEG never changes the strength.
+   It reflects consistency, not correctness.
 
 <p align="center">
-  <img src="assets/casr_method.png" width="100%" alt="Complete CASR method with offline reference, online condition-level recovery, and ACEG audit">
+  <img src="assets/casr_method.png" width="100%" alt="Overall framework of CASR: offline calibration, online recovery, and ACEG">
 </p>
 
 ## Main results
 
-- CASR recovers the offline reference strength in **7 of 8** canonical noise
-  conditions without using noise labels at test time.
-- Its maximum panel-mean gap from the offline reference policy is **0.31 percentage
-  points** across EER, WER, and CER.
-- The controller adds approximately **5.20 ms per utterance**, about **1.0%** of the
-  backbone inference time in our setup.
-- ACEG records control consistency and uncertainty without changing the selected
-  strength.
+Eight canonical conditions (white and babble noise at 20, 10, 5, and 0 dB), lazy-informed
+attacker, ECAPA-TDNN verifier, Whisper-base ASR. WER is averaged over three decoding
+seeds. The difference is CASR minus the global fixed strength selected on the same
+development set, with 95% speaker-cluster bootstrap confidence intervals.
 
-<p align="center">
-  <img src="assets/noisy_operating_points.png" width="78%" alt="Privacy and utility operating points under canonical noise conditions">
-</p>
+| Evaluation panel | Conditions meeting the minimum target EER | WER of CASR (%) | WER difference vs. fixed strength 0.8 (points) |
+|---|---:|---:|---:|
+| LibriSpeech test-clean, 20 speakers | 8/8 | 61.92 | -2.35 [-3.12, -1.63] |
+| LibriSpeech test-clean, 40 speakers | 8/8 | 63.59 | -0.79 [-1.53, -0.08] |
+| VoicePrivacy speaker set, 29 speakers | 8/8 | 64.67 | -0.95 [-1.77, -0.14] |
 
-<p align="center"><em>
-Across the canonical noise panel, privacy remains within a relatively narrow EER
-band while WER deteriorates substantially as noise becomes more severe.
-</em></p>
+The control layer takes about 5.19 ms per utterance, against about 505 ms for the
+backbone. The batch strength is available once the whole batch has arrived.
 
-## Condition-level recovery
+## Scope
 
-The released controller predicts a strength for each utterance and then aggregates
-the snapped predictions at condition level. The distributions below show why
-aggregation is useful: most conditions concentrate near the offline reference
-strength, while difficult babble conditions exhibit wider uncertainty.
+- CASR assumes that the utterances of a batch share one noise condition.
+  Condition changes within a batch shift the decision.
+- The development set must cover the noise types met at deployment. On noise types
+  absent from the development set, CASR can underestimate the required strength,
+  and ACEG does not reliably flag this.
+- The backbone must offer at least one candidate strength that meets the minimum
+  target EER.
 
-<p align="center">
-  <img src="assets/strength_recovery.png" width="100%" alt="Utterance-level CASR strength distributions across eight canonical conditions">
-</p>
+## Repository contents
 
-The dashed red line marks the offline reference strength for each condition. CASR
-recovers the same strength in seven conditions; the single mismatch occurs for
-`babble_snr5dB`.
+- `src/casr/controller.py`: utterance-level regression, snapping, mode aggregation,
+  down-step rule (`conservative_shift` in the code), and ACEG.
+- `src/casr/features.py`: acoustic feature extraction from 16 kHz mono audio.
+- `src/casr/protocol.py`: deterministic 20-speaker/200-utterance protocol with 900
+  positive and 900 negative verification trials.
+- `src/casr/noise.py`: additive-noise mixing at a target SNR.
+- `src/casr/metrics.py`, `src/casr/bootstrap.py`: EER, WER/CER, and bootstrap helpers.
+- `configs/casr_policy.json`: the released regressor fitted on the development set,
+  the reference policy, the margin, and the down-step thresholds.
+- `configs/offline_reference_policy.json`: the reference policy `g(c)`.
+- `configs/evaluation_protocol.json`: panels, development set, metrics, and statistics.
+- `artifacts/canonical_utterance_predictions.json`: features and predictions of the
+  1,600 utterances of the 20-speaker main panel, so that the batch decisions can be
+  checked without distributing speech.
+- `docs/`: evaluation protocol, calibration, and implementation notes.
 
-## Released components
-
-- `src/casr/features.py`: eight acoustic descriptors used in the ablation study.
-- `src/casr/controller.py`: quadratic predictor, condition aggregation,
-  uncertainty calibration, and ACEG.
-- `src/casr/protocol.py`: deterministic 20-speaker/200-utterance LibriSpeech
-  protocol with 900 positive and 900 negative verification trials.
-- `src/casr/noise.py`: deterministic additive-noise mixing at a target SNR.
-- `src/casr/metrics.py` and `src/casr/bootstrap.py`: EER, WER/CER, and paired
-  bootstrap helpers.
-- `configs/`: released CASR policy, offline reference strengths, and protocol
-  metadata.
-- `artifacts/canonical_utterance_predictions.json`: 1,600 derived prediction
-  records for checking condition-level recovery without distributing speech.
-
-The repository intentionally excludes speech corpora, noise recordings, model
-weights, generated audio, and third-party anonymization implementations.
+The repository does not include speech corpora, noise recordings, model weights,
+generated audio, third-party anonymization backbones, or the full experiment code.
 
 ## Installation
 
@@ -102,18 +97,17 @@ source .venv/bin/activate
 python -m pip install -e .
 ```
 
-The reference controller requires Python 3.10 or later and NumPy. Audio passed to
-the released policy must be mono, 16-bit PCM, and sampled at 16 kHz.
+Python 3.10 or later and NumPy are required. Audio must be mono, 16-bit PCM, 16 kHz.
 
-## Reproduce the canonical decisions
+## Reproduce the batch decisions
 
 ```bash
 python scripts/recover_canonical.py
 ```
 
-This command reads the released utterance-level predictions, applies the same
-condition-level control path, and prints the recovered strength and ACEG metadata
-for all eight canonical conditions.
+The script reads the released utterance-level predictions, applies the released
+policy, and prints the selected strength, the branch of the down-step rule, and the
+ACEG record for each of the eight canonical conditions of the 20-speaker main panel.
 
 To inspect one condition:
 
@@ -126,40 +120,24 @@ casr recover \
 
 ## Build the evaluation protocol
 
-Download LibriSpeech separately and point the command to the directory containing
+Download LibriSpeech separately and point the command to the directory that contains
 `SPEAKERS.TXT` and `test-clean/`:
 
 ```bash
-casr build-protocol \
-  --data-root /path/to/LibriSpeech \
-  --output outputs/eval_protocol \
-  --seed 2026
+casr build-protocol --data-root /path/to/LibriSpeech --output outputs/eval_protocol --seed 2026
 ```
 
-The generated protocol contains 20 speakers, 10 utterances per speaker, 900
-same-speaker trials, and 900 different-speaker trials. See
-[`docs/EVALUATION_PROTOCOL.md`](docs/EVALUATION_PROTOCOL.md) for the complete
-evaluation definition.
-
-## Scope and limitations
-
-This is the paper's control-layer and protocol release, not a standalone SSL-SAS
-backbone. End-to-end waveform anonymization requires a compatible backbone that
-exposes anonymization strength `alpha`. The reported policy was calibrated on white
-and babble noise at 20, 10, 5, and 0 dB; performance on unseen noise types should
-not be interpreted as guaranteed generalization.
+See [`docs/EVALUATION_PROTOCOL.md`](docs/EVALUATION_PROTOCOL.md) for the full definition.
 
 ## Data and licensing notice
 
 No corpus audio is redistributed. Obtain [LibriSpeech](https://www.openslr.org/12/)
-and [MUSAN](https://www.openslr.org/17/) from OpenSLR under CC BY 4.0. Obtain
-[DEMAND](https://zenodo.org/records/1227121) from its official Zenodo record under
-CC BY-SA 3.0.
+and [MUSAN](https://www.openslr.org/17/) from OpenSLR under CC BY 4.0, and
+[DEMAND](https://zenodo.org/records/1227121) from its Zenodo record under CC BY-SA 3.0.
 
-The repository currently does not assign an open-source software license. Until a
-license is selected, reuse rights are not granted beyond viewing and evaluating the
-published material.
+The repository does not yet assign an open-source software license. Until one is
+selected, no reuse rights are granted beyond viewing and evaluating the material.
 
 ## Citation
 
-The paper citation will be added after publication.
+The citation will be added after publication.

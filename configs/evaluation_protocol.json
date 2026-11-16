@@ -1,25 +1,72 @@
 {
   "seed": 2026,
   "sampling_rate_hz": 16000,
-  "main_corpus": "LibriSpeech test-clean",
-  "n_speakers": 20,
-  "utterances_per_speaker": 10,
-  "n_utterances": 200,
-  "speaker_trials": {
-    "positive": 900,
-    "negative": 900
+  "evaluation_panels": {
+    "main_20": {
+      "corpus": "LibriSpeech test-clean",
+      "n_speakers": 20,
+      "utterances_per_speaker": 10,
+      "n_utterances": 200,
+      "speaker_trials": {
+        "positive": 900,
+        "negative": 900
+      }
+    },
+    "libri40": {
+      "corpus": "LibriSpeech test-clean (all speakers)",
+      "n_speakers": 40,
+      "n_utterances": 400
+    },
+    "vpc29": {
+      "corpus": "LibriSpeech test-clean speakers used in the VoicePrivacy evaluation",
+      "n_speakers": 29,
+      "n_utterances": 290
+    }
+  },
+  "development_set": {
+    "corpus": "LibriSpeech dev-clean",
+    "n_speakers": 20,
+    "n_utterances": 200,
+    "use": "calibration only; speakers disjoint from all evaluation panels"
   },
   "canonical_conditions": {
-    "noise_types": ["white", "babble"],
-    "snr_db": [20, 10, 5, 0]
+    "noise_types": [
+      "white",
+      "babble"
+    ],
+    "snr_db": [
+      20,
+      10,
+      5,
+      0
+    ]
   },
-  "candidate_alphas": [0.3, 0.4, 0.5, 0.6, 0.7, 0.8],
+  "candidate_alphas": [
+    0.3,
+    0.4,
+    0.5,
+    0.6,
+    0.7,
+    0.8
+  ],
+  "minimum_target_eer_percent": 40.5,
+  "margin_percent": 3.2,
+  "calibration_threshold_percent": 43.7,
   "privacy_metric": "EER",
-  "utility_metrics": ["WER", "CER"],
-  "attackers": ["ignorant", "lazy-informed", "semi-informed"],
-  "primary_attacker": "lazy-informed",
+  "utility_metrics": [
+    "WER",
+    "CER"
+  ],
+  "attacker": "lazy-informed",
   "asr": "Whisper-base",
+  "asr_decoding_seeds": 3,
   "primary_verifier": "ECAPA-TDNN",
-  "secondary_verifier": "WavLM",
-  "bootstrap_resamples": 1000
+  "statistics": {
+    "confidence_interval": "95% speaker-cluster bootstrap",
+    "bootstrap_resamples": 2000,
+    "paired_tests": [
+      "paired t-test",
+      "Wilcoxon signed-rank"
+    ]
+  }
 }

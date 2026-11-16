@@ -1,13 +1,30 @@
 {
-  "policy_name": "phase2_alpha_policy_learned_v2_preview_v7",
-  "timestamp": "2026-04-05",
+  "policy_name": "casr_devcal_margin",
+  "timestamp": "2026-11-16",
   "notes": [
-    "learned_v2_preview trains on utterance-level acoustic features rather than condition-averaged features",
-    "current output is still a preview because per-condition alpha is obtained by aggregating utterance-level predictions",
-    "selected model is chosen for leave-one-condition stability first, not just best in-sample fit"
+    "The utterance-level regressor is fitted only on the development set (LibriSpeech dev-clean, 20 speakers, 10 utterances each, eight canonical conditions); evaluation speakers are never used for calibration.",
+    "Its learning target is the reference policy g(c): the smallest candidate strength whose development-set EER meets the calibration threshold tau_cal = tau + m.",
+    "Runtime aggregation takes the mode of the snapped utterance-level strengths in a batch, followed by the down-step rule; ACEG is computed afterwards and never changes the strength."
   ],
+  "calibration": {
+    "development_set": "LibriSpeech dev-clean (20 speakers, 200 utterances per condition)",
+    "minimum_target_eer_percent": 40.5,
+    "margin_percent": 3.2,
+    "calibration_threshold_percent": 43.7,
+    "attacker": "lazy-informed",
+    "reference_policy": {
+      "white_snr20dB": 0.8,
+      "white_snr10dB": 0.8,
+      "white_snr5dB": 0.7,
+      "white_snr0dB": 0.7,
+      "babble_snr20dB": 0.8,
+      "babble_snr10dB": 0.7,
+      "babble_snr5dB": 0.7,
+      "babble_snr0dB": 0.5
+    }
+  },
   "utterance_level_model": {
-    "model_type": "utterance_acoustic_feature_regression",
+    "model_type": "second_order_polynomial_ridge_regression",
     "feature_names_base": [
       "centroid_norm_mean",
       "energy_contrast_norm"
@@ -21,28 +38,28 @@
       "centroid_norm_mean_x_energy_contrast_norm"
     ],
     "coefficients": [
-      0.6374999999999983,
-      0.018232113225399058,
-      0.3127914120105167,
-      0.16260826782739035,
-      -0.12576197363700442,
-      -0.12245690276946036
+      0.712499999999998,
+      0.119252211861506,
+      0.2916918357640832,
+      0.00759607570202156,
+      -0.13963656159862647,
+      -0.08170215256260313
     ],
     "feature_means": {
-      "centroid_norm_mean": 0.6388435803531511,
-      "energy_contrast_norm": 0.5274079123536746,
-      "centroid_norm_mean_sq": 0.4490902107271967,
-      "energy_contrast_norm_sq": 0.31758335285118405,
-      "centroid_norm_mean_x_energy_contrast_norm": 0.3206006617236371
+      "centroid_norm_mean": 0.6286410890017712,
+      "energy_contrast_norm": 0.5438576119343435,
+      "centroid_norm_mean_sq": 0.43950774381209934,
+      "energy_contrast_norm_sq": 0.34223883966222607,
+      "centroid_norm_mean_x_energy_contrast_norm": 0.3221952425373243
     },
     "feature_stds": {
-      "centroid_norm_mean": 0.20240822752240975,
-      "energy_contrast_norm": 0.19855539992133872,
-      "centroid_norm_mean_sq": 0.26354101680008357,
-      "energy_contrast_norm_sq": 0.23050254482435578,
-      "centroid_norm_mean_x_energy_contrast_norm": 0.12798288540742916
+      "centroid_norm_mean": 0.21051870470522902,
+      "energy_contrast_norm": 0.21554057066663462,
+      "centroid_norm_mean_sq": 0.27200663026515526,
+      "energy_contrast_norm_sq": 0.27009435853286856,
+      "centroid_norm_mean_x_energy_contrast_norm": 0.13236635004915995
     },
-    "aggregation_mode": "p75",
+    "aggregation_mode": "mode",
     "feature_source": "real_noisy_audio_utterance_features",
     "alpha_min": 0.3,
     "alpha_max": 0.8,
@@ -55,17 +72,12 @@
       0.8
     ]
   },
-  "preview_condition_predictions": {
-    "white_snr20dB": 0.7,
-    "white_snr10dB": 0.7,
-    "white_snr5dB": 0.7,
-    "white_snr0dB": 0.7,
-    "babble_snr20dB": 0.7,
-    "babble_snr10dB": 0.6,
-    "babble_snr5dB": 0.6,
-    "babble_snr0dB": 0.5
+  "down_step_rule": {
+    "dispersion_threshold": 0.04,
+    "mode_median_gap_threshold": 0.05,
+    "shift_delta": 0.05
   },
-  "default_speaker_mix_alpha": 0.7,
+  "default_speaker_mix_alpha": 0.8,
   "artifacts": {
     "utterance_manifest": "artifacts/canonical_utterance_predictions.json"
   }

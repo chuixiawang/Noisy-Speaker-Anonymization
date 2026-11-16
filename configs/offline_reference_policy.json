@@ -1,20 +1,20 @@
 {
-  "policy_name": "phase2_alpha_policy_v7",
-  "timestamp": "2026-04-05",
+  "policy_name": "reference_policy_devcal_margin",
+  "timestamp": "2026-11-16",
   "notes": [
-    "alpha controls anonymization strength: 1.0=full replacement, 0.0=keep source",
-    "v7 keeps the white-noise branch at 0.70, keeps babble_snr20dB at 0.70, and refreshes babble_snr10dB to 0.60 after the utterance-level learned-alpha verification run",
-    "Current heuristic goal: recover utility under noisy conditions while avoiding large privacy drops"
+    "alpha controls anonymization strength: 1.0 = full replacement, 0.0 = keep source",
+    "g(c) is the smallest candidate strength whose development-set EER meets the calibration threshold tau_cal = 43.7% (tau = 40.5%, margin m = 3.2 points)",
+    "This table is the learning target of the utterance-level regressor and the reference-policy lookup used for comparison; it is not used at test time"
   ],
   "exact_conditions": {
-    "babble_snr0dB": 0.4,
-    "babble_snr5dB": 0.6,
-    "babble_snr10dB": 0.6,
-    "babble_snr20dB": 0.7,
-    "white_snr0dB": 0.7,
+    "white_snr20dB": 0.8,
+    "white_snr10dB": 0.8,
     "white_snr5dB": 0.7,
-    "white_snr10dB": 0.7,
-    "white_snr20dB": 0.7
+    "white_snr0dB": 0.7,
+    "babble_snr20dB": 0.8,
+    "babble_snr10dB": 0.7,
+    "babble_snr5dB": 0.7,
+    "babble_snr0dB": 0.5
   },
-  "default_speaker_mix_alpha": 1.0
+  "default_speaker_mix_alpha": 0.8
 }
